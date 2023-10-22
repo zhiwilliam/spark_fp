@@ -38,11 +38,13 @@ object Demo {
 
   val materializedProgram = program[ReaderT[IO, DATA, *]]
 
-  def main(args: Array[String]) = {
+  def main(args: Array[String]): Unit = {
     val materializedReader = SparkBatchReadTransaction.sparkBatchRead[ReaderT[IO, SPARK_CSV, *], Transaction]
+
+    import pureconfig.generic.auto._
     val dependencies = (
       IO.blocking(simpleLocalSession("Demo Spark Read")),
-      IOConfig("demo-config.conf").read
+      read[DemoConfig].fromFile("demo-config.conf")
     ).parTupled
 
     val process = for {
