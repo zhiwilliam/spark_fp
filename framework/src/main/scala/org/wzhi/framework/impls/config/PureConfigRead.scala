@@ -1,6 +1,7 @@
 package org.wzhi.framework.impls.config
 
 import cats.effect.{IO, Sync}
+import org.wzhi.framework.impls.io.file.FileRead
 import pureconfig._
 
 import scala.reflect.ClassTag
@@ -12,4 +13,12 @@ object PureConfigRead {
     val config = ConfigFactory.parseString(configStr)
     ConfigSource.fromConfig(config).loadF[F, T]()
   }
+
+  trait ReadFileWithIO[A] {
+    def fromFile(filePath: String): IO[A]
+  }
+
+  def read[A: ClassTag : ConfigReader]: ReadFileWithIO[A] =
+    (filePath: String) => FileRead.makeResourceForRead(filePath).use(x =>
+      PureConfigRead.readConfFromString[IO, A](x.getLines().mkString("\n")))
 }
