@@ -29,7 +29,7 @@ lazy val framework = (project in file("framework"))
     commonSettings
   )
   .settings (
-    libraryDependencies ++= (catsEffect ++ spark ++ tagless ++ configFramework)
+    libraryDependencies ++= (catsEffect ++ spark ++ tagless ++ configFramework ++ scalaTest)
   )
 
 lazy val core = (project in file("core"))
@@ -42,7 +42,7 @@ lazy val demo = (project in file("demo"))
     commonSettings
   )
   .settings(
-    libraryDependencies ++= configFramework ++ spark
+    libraryDependencies ++= configFramework ++ spark ++ scalaTest
   )
   .dependsOn(framework, core)
 

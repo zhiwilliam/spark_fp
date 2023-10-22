@@ -24,4 +24,9 @@ object Dependencies {
     "org.apache.spark" %% "spark-sql" % "3.5.0",
     "org.apache.spark" %% "spark-streaming" % "3.5.0"
   )//.map(_ % Provided)
+
+  lazy val scalaTest: Seq[ModuleID] = Seq(
+    "org.scalactic" %% "scalactic" % "3.2.17",
+    "org.scalatest" %% "scalatest" % "3.2.17" % Test
+  )
 }
