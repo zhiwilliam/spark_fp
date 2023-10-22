@@ -23,4 +23,6 @@ object SparkBatchReadTransaction {
       readCsv(readConfig.dataFilePath)(sparkSession).as[T]
     }
   } yield BatchDatasetContainer(result)(sparkSession)
+
+
 }
