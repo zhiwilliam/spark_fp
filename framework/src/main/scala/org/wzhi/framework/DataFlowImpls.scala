@@ -1,13 +1,11 @@
-package org.wzhi.impls.data
+package org.wzhi.framework
 
 import org.apache.spark.sql.{Dataset, SparkSession}
-import org.wzhi.framework.DataFlow
 
 import scala.reflect.runtime.universe
 import scala.reflect.runtime.universe.TypeTag
 
-object DataContainerImpls {
-
+object DataFlowImpls {
   case class BatchDatasetContainer[A](data: Dataset[A])(implicit val spark: SparkSession) extends DataFlow[A] {
     override def outputToConsole: Unit = {
       data.collect.foreach(println)
@@ -33,4 +31,6 @@ object DataContainerImpls {
 
     override def outputToConsole: Unit = data.foreach(println)
   }
+
+
 }

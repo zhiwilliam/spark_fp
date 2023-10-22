@@ -10,7 +10,7 @@ object SparkBatch {
       .getOrCreate();
   }
 
-  def readCsv(path: String)(implicit spark: SparkSession): DataFrame =
-    spark.read.option("header","true").option("inferSchema", "true").csv(path)
+  def readCsv(path: String, withHead: String = "true")(implicit spark: SparkSession): DataFrame =
+    spark.read.option("header", withHead).option("inferSchema", "true").csv(path)
 
 }

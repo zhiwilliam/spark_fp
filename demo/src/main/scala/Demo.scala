@@ -1,8 +1,9 @@
+import org.apache.spark.sql.SparkSession
 import org.wzhi.framework.DataFlow
-import org.wzhi.framework.common.SparkBatch.simpleLocalSession
+import org.wzhi.framework.DataFlowImpls.BatchDatasetContainer
+import org.wzhi.framework.common.SparkBatch.{readCsv, simpleLocalSession}
 import org.wzhi.framework.impls.config.PureConfigRead._
-import org.wzhi.impls.read.SparkBatchReadTransaction
-import org.wzhi.impls.read.SparkBatchReadTransaction._
+import pureconfig.generic.auto._
 import org.wzhi.models.{DemoConfig, Transaction}
 
 import java.sql.Timestamp
@@ -20,22 +21,18 @@ object Demo {
 
   type DATA = DataFlow[Transaction]
 
-  def program[F[_] : Sync : NonEmptyParallel](implicit A: Ask[F, DATA]) = {
+  def program[F[_] : Sync : NonEmptyParallel](implicit A: Ask[F, DATA]): F[DataFlow[Transaction]] = {
     for {
       inputData <- A.ask
-      _ <- Sync[F].blocking {
-        val transformed = inputData.map(x => x.copy(time = Timestamp.from(Instant.now)))
-        transformed.outputToConsole
+      result <- Sync[F].blocking {
+        inputData.map(x => x.copy(time = Timestamp.from(Instant.now)))
       }
-    } yield ()
+    } yield result
   }
 
   val materializedProgram = program[ReaderT[IO, DATA, *]]
 
   def main(args: Array[String]): Unit = {
-    val materializedReader = SparkBatchReadTransaction.sparkBatchRead[ReaderT[IO, SPARK_CSV, *], Transaction]
-
-    import pureconfig.generic.auto._
     val dependencies = (
       IO.blocking(simpleLocalSession("Demo Spark Read")),
       read[DemoConfig].fromFile("demo-config.conf")
@@ -43,10 +40,13 @@ object Demo {
 
     val process = for {
       (spark, config) <- dependencies
-      readerDepends = (spark, config.readCsvConfig)
-      data <- materializedReader.run(readerDepends)
+      data <- IO.blocking{
+        import spark.implicits._
+        implicit val session: SparkSession = spark
+        BatchDatasetContainer(readCsv(config.readCsvConfig.dataFilePath)(spark).as[Transaction])
+      }
       result <- materializedProgram.run(data)
-    } yield()
+    } yield result.outputToConsole
 
     process.unsafeRunSync()
   }
