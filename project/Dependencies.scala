@@ -8,6 +8,10 @@ object Dependencies {
     "org.typelevel" %% "cats-mtl" % "1.3.0"
   )
 
+  lazy val dataProcess: Seq[ModuleID] = Seq(
+    "io.scalaland" %% "chimney" % "0.8.0"
+  )
+
   lazy val tagless: Seq[ModuleID] = Seq(
     "org.typelevel" %% "cats-tagless-macros" % "0.15.0"
   )

@@ -25,7 +25,8 @@ object Demo {
     for {
       inputData <- A.ask
       result <- Sync[F].blocking {
-        inputData.map(x => x.copy(time = Timestamp.from(Instant.now)))
+        inputData
+          .map(x => x.copy(time = Timestamp.from(Instant.now)))
       }
     } yield result
   }

@@ -42,7 +42,7 @@ lazy val demo = (project in file("demo"))
     commonSettings
   )
   .settings(
-    libraryDependencies ++= configFramework ++ spark ++ scalaTest
+    libraryDependencies ++= configFramework ++ spark ++ dataProcess ++ scalaTest
   )
   .dependsOn(framework, core)
 
