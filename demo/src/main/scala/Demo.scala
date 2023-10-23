@@ -1,6 +1,5 @@
 import cats.data.Validated.{Invalid, Valid}
 import io.scalaland.chimney.PartialTransformer
-import io.scalaland.chimney.partial.Result
 import org.apache.spark.sql.SparkSession
 import org.wzhi.framework.{DataFlow, DataStatic}
 import org.wzhi.framework.DataFlowImpls.{BatchDatasetContainer, BroadCastStatic}
@@ -10,9 +9,6 @@ import org.wzhi.core.parsers.StrParser._
 import org.wzhi.core.validate.MkValidatedNel._
 import pureconfig.generic.auto._
 import org.wzhi.models._
-
-import java.sql.Timestamp
-import java.time.Instant
 
 object Demo {
 
@@ -36,10 +32,16 @@ object Demo {
             import io.scalaland.chimney.dsl._
             import io.scalaland.chimney.cats._
 
+            import org.wzhi.core.validate.nel.str.PredefinedValidators._
+            import org.wzhi.core.validate.nel.str.ValidatorStrErr
+            import ValidatorStrErr._
+            import ValidatorStrErr.strNelValidator._
+
             val enrichMap = enrichData.value
             implicit val partialTransformer: PartialTransformer[Transaction, EnrichedTransaction] =
               PartialTransformer
                 .define[Transaction, EnrichedTransaction]
+                .withFieldComputedPartial(_.account, x => email.validate(x.account).toPartialResult)
                 .withFieldComputedPartial(_.amount, x =>
                   (parseBigDec(x.amount).toNel(s"ID: ${x.id}'s amount"),
                     enrichMap.get(x.country).toNel(s"ID: ${x.id} can't find currency for ${x.country}"))

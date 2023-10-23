@@ -10,12 +10,12 @@ class DemoTest extends AnyFlatSpec {
     import cats.effect.unsafe.implicits.global
 
     val process = materializedProgram.run(ListContainer(List(
-        Transaction("1234", "testAccount", "27.48", "US", Timestamp.valueOf("2023-01-01 23:21:56.344"), "true"))),
+        Transaction("1234", "test@gmail.com", "27.48", "US", Timestamp.valueOf("2023-01-01 23:21:56.344"), "true"))),
         ListStatic(Map("US" -> "USD")))
 
     val test = process.unsafeRunSync()
     test.outputToConsole
-    test.headOption.map(x => x shouldBe DemoResult(true, List(), Some(EnrichedTransaction("1234", "testAccount",
+    test.headOption.map(x => x shouldBe DemoResult(true, List(), Some(EnrichedTransaction("1234", "test@gmail.com",
       Money(27.48,"USD"), Timestamp.valueOf("2023-01-01 23:21:56.344"),true))))
   }
 
