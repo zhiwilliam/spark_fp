@@ -9,7 +9,10 @@ object Dependencies {
   )
 
   lazy val dataProcess: Seq[ModuleID] = Seq(
-    "io.scalaland" %% "chimney" % "0.8.0"
+    "io.scalaland" %% "chimney" % "0.8.0",
+    "io.scalaland" %% "chimney-cats" % "0.8.0",
+    "org.typelevel" %% "cats-core" % "2.10.0",
+    "org.typelevel" %% "kittens" % "3.0.0"
   )
 
   lazy val tagless: Seq[ModuleID] = Seq(

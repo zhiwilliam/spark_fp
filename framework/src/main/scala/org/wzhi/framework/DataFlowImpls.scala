@@ -1,5 +1,7 @@
 package org.wzhi.framework
 
+import org.apache.spark.broadcast.Broadcast
+import io.scalaland.chimney.partial
 import org.apache.spark.sql.{Dataset, SparkSession}
 
 import scala.reflect.runtime.universe
@@ -22,6 +24,10 @@ object DataFlowImpls {
     }
   }
 
+  case class BroadCastStatic[A](data: Broadcast[A]) extends DataStatic[A] {
+    def value: A = data.value
+  }
+
   case class ListContainer[A](data: List[A]) extends DataFlow[A] {
     override def flatMap[U <: Product : universe.TypeTag](f: A => IterableOnce[U]): DataFlow[U] =
       ListContainer(data.flatMap(f))
@@ -32,5 +38,7 @@ object DataFlowImpls {
     override def outputToConsole: Unit = data.foreach(println)
   }
 
-
+  case class ListStatic[A](data: A) extends DataStatic[A] {
+    def value: A = data
+  }
 }

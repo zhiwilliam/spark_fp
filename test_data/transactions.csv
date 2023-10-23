@@ -1,2 +1,2 @@
-id,account,time
-23,test,2012-02-12 09:23:45.114
+id,account,amount,country,time,isTest
+23,test,231.34,US,2012-02-12 09:23:45.114,true

@@ -29,10 +29,13 @@ lazy val framework = (project in file("framework"))
     commonSettings
   )
   .settings (
-    libraryDependencies ++= (catsEffect ++ spark ++ tagless ++ configFramework ++ scalaTest)
+    libraryDependencies ++= (catsEffect ++ spark ++ tagless ++ configFramework ++ dataProcess ++ scalaTest)
   )
 
 lazy val core = (project in file("core"))
+  .settings(
+    libraryDependencies ++= dataProcess ++ scalaTest
+  )
   .settings(
     commonSettings
   )

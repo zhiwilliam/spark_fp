@@ -7,3 +7,7 @@ trait DataFlow[A] extends Serializable {
   def outputToConsole: Unit
 }
 
+trait DataStatic[A] extends Serializable {
+  def value: A
+}
+
