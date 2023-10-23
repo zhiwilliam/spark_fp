@@ -22,6 +22,13 @@ object DataFlowImpls {
       import spark.implicits._
       BatchDatasetContainer(data.map(f))
     }
+
+    override def foreach[U](f: A => U): Unit = {
+      def unitForeach(a: A): Unit = f(a)
+      data.foreach(unitForeach)
+    }
+
+    override def headOption: Option[A] = data.take(1).headOption
   }
 
   case class BroadCastStatic[A](data: Broadcast[A]) extends DataStatic[A] {
@@ -36,6 +43,10 @@ object DataFlowImpls {
       ListContainer(data.map(f))
 
     override def outputToConsole: Unit = data.foreach(println)
+
+    override def foreach[U](f: A => U): Unit = data.foreach(f)
+
+    override def headOption: Option[A] = data.headOption
   }
 
   case class ListStatic[A](data: A) extends DataStatic[A] {
