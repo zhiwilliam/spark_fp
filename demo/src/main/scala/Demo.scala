@@ -1,17 +1,22 @@
 import cats.data.Validated.{Invalid, Valid}
 import io.scalaland.chimney.PartialTransformer
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{Encoder, SparkSession}
 import org.wzhi.framework.{DataFlow, DataStatic}
-import org.wzhi.framework.DataFlowImpls.{BatchDatasetContainer, BroadCastStatic}
-import org.wzhi.framework.common.SparkBatch.{readCsv, simpleLocalSession}
+import org.wzhi.framework.DataFlowImpls._
+import org.wzhi.framework.common.SparkBatch
+import org.wzhi.framework.common.SparkStream
 import org.wzhi.framework.impls.config.PureConfigRead._
 import org.wzhi.core.parsers.StrParser._
 import org.wzhi.core.validate.MkValidatedNel._
 import pureconfig.generic.auto._
 import org.wzhi.models._
+import io.scalaland.chimney.dsl._
+import io.scalaland.chimney.cats._
+import org.wzhi.core.fileSystem.utils.folderOfFilePath
+import org.wzhi.core.validate.nel.str.PredefinedValidators._
+import org.wzhi.framework.common.SparkCreator.simpleLocalSession
 
 object Demo {
-
   import cats._
   import cats.effect._
   import cats.mtl._
@@ -23,20 +28,12 @@ object Demo {
 
   type DATA = (DataFlow[Transaction], DataStatic[Map[String, String]])
 
-  def program[F[_] : Sync : NonEmptyParallel](implicit A: Ask[F, DATA]) = {
+  def program[F[_] : Sync : NonEmptyParallel](implicit A: Ask[F, DATA]): F[DataFlow[DemoResult]] = {
     for {
       (inputData, enrichData) <- A.ask
       enriched <- Sync[F].blocking {
         inputData
           .map{ x =>
-            import io.scalaland.chimney.dsl._
-            import io.scalaland.chimney.cats._
-
-            import org.wzhi.core.validate.nel.str.PredefinedValidators._
-            import org.wzhi.core.validate.nel.str.ValidatorStrErr
-            import ValidatorStrErr._
-            import ValidatorStrErr.strNelValidator._
-
             val enrichMap = enrichData.value
             implicit val partialTransformer: PartialTransformer[Transaction, EnrichedTransaction] =
               PartialTransformer
@@ -72,12 +69,27 @@ object Demo {
 
     val process = for {
       (spark, config) <- dependencies
+      /*
+      // Stream mode read csv folder
       data <- IO.blocking{
         import spark.implicits._
         implicit val session: SparkSession = spark
-        BatchDatasetContainer(readCsv(config.readCsvConfig.dataFilePath)(spark).as[Transaction])
+        StreamDatasetContainer(
+          SparkStream.readCsv[Transaction](folderOfFilePath(config.readCsvConfig.dataFilePath)).as[Transaction])
+      }*/
+
+      // Spark mode read csv file
+      data <- IO.blocking {
+        import spark.implicits._
+        implicit val session: SparkSession = spark
+        // todo: SparkBatch functions can only use BatchDatastContainer. To avoid confuse, we need to develop
+        // a implicit class for SparkBatch like asContainer[Transaction]. I am thinking of let readCsv returns
+        // BatchDatasetContainer instead of Dataset...
+        BatchDatasetContainer(
+          SparkBatch.readCsv(folderOfFilePath(config.readCsvConfig.dataFilePath)).as[Transaction])
       }
-      enrichData <- IO.blocking {
+
+      enrichData <- IO.pure {
         BroadCastStatic(spark.sparkContext.broadcast(Map("US" -> "USD")))
       }
       result <- materializedProgram.run((data, enrichData))
