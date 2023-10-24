@@ -1,0 +1,8 @@
+/.bsp/
+/.idea/
+/core/target
+/demo/target
+/framework/target/
+/project/target/
+/project/project/target/
+/target/
