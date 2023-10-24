@@ -9,6 +9,8 @@ class DemoTest extends AnyFlatSpec {
   "Demo" should "successfully local test" in {
     import cats.effect.unsafe.implicits.global
 
+    // todo: Timestamp.valueOf("2023-01-01 23:21:56.344") can be "2023-01-01 23:21:56.344".asTimestamp or
+    //  Something like org.wzih.core.time.CoreTime.now.asTimestamp
     val process = materializedProgram.run(ListContainer(List(
         Transaction("1234", "test@gmail.com", "27.48", "US", Timestamp.valueOf("2023-01-01 23:21:56.344"), "true"))),
         ListStatic(Map("US" -> "USD")))
