@@ -28,7 +28,9 @@ object Demo {
 
   type DATA = (DataFlow[Transaction], DataStatic[Map[String, String]])
 
-  def program[F[_] : Sync : NonEmptyParallel, K[_]: FlatMapF](implicit A: Ask[F, DATA]): F[DataFlow[DemoResult]] = {
+  // todo: tagless final version
+  //  def program[F[_] : Sync : NonEmptyParallel, K[_]: FlatMapF](implicit A: Ask[F, DATA]): F[DataFlow[DemoResult]] = {
+  def program[F[_] : Sync : NonEmptyParallel](implicit A: Ask[F, DATA]): F[DataFlow[DemoResult]] = {
     for {
       (inputData, enrichData) <- A.ask
       enriched <- Sync[F].blocking {
@@ -59,7 +61,7 @@ object Demo {
     } yield demoResult
   }
 
-  def materializedProgram[K[_]: FlatMapF] = program[ReaderT[IO, DATA, *], K]
+  def materializedProgram = program[ReaderT[IO, DATA, *]]
 
   def main(args: Array[String]): Unit = {
     import org.wzhi.framework.impls.config.PureConfigRead.read
@@ -96,8 +98,8 @@ object Demo {
       result <- {
         import FlatMapF._
         implicit val session: SparkSession = spark
-        implicit val datasetIsFlatMap = new DatasetFlatMap
-        materializedProgram[Dataset].run((data, enrichData))
+        //implicit val datasetIsFlatMap = new DatasetFlatMap // tagless final
+        materializedProgram.run((data, enrichData))
       }
     } yield result.outputToConsole
 
