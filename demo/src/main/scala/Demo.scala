@@ -1,11 +1,10 @@
 import cats.data.Validated.{Invalid, Valid}
 import io.scalaland.chimney.PartialTransformer
-import org.apache.spark.sql.{Encoder, SparkSession}
-import org.wzhi.framework.{DataFlow, DataStatic}
+import org.apache.spark.sql.{Dataset, Encoder, SparkSession}
+import org.wzhi.framework._
 import org.wzhi.framework.DataFlowImpls._
 import org.wzhi.framework.common.SparkBatch
 import org.wzhi.framework.common.SparkStream
-import org.wzhi.framework.impls.config.PureConfigRead._
 import org.wzhi.core.parsers.StrParser._
 import org.wzhi.core.validate.MkValidatedNel._
 import pureconfig.generic.auto._
@@ -15,6 +14,7 @@ import io.scalaland.chimney.cats._
 import org.wzhi.core.fileSystem.utils.folderOfFilePath
 import org.wzhi.core.validate.nel.str.PredefinedValidators._
 import org.wzhi.framework.common.SparkCreator.simpleLocalSession
+import org.wzhi.framework.monads.FlatMapF
 
 object Demo {
   import cats._
@@ -28,6 +28,8 @@ object Demo {
 
   type DATA = (DataFlow[Transaction], DataStatic[Map[String, String]])
 
+  // todo: tagless final version
+  //  def program[F[_] : Sync : NonEmptyParallel, K[_]: FlatMapF](implicit A: Ask[F, DATA]): F[DataFlow[DemoResult]] = {
   def program[F[_] : Sync : NonEmptyParallel](implicit A: Ask[F, DATA]): F[DataFlow[DemoResult]] = {
     for {
       (inputData, enrichData) <- A.ask
@@ -59,9 +61,10 @@ object Demo {
     } yield demoResult
   }
 
-  val materializedProgram = program[ReaderT[IO, DATA, *]]
+  def materializedProgram = program[ReaderT[IO, DATA, *]]
 
   def main(args: Array[String]): Unit = {
+    import org.wzhi.framework.impls.config.PureConfigRead.read
     val dependencies = (
       IO.blocking(simpleLocalSession("Demo Spark Read")),
       read[DemoConfig].fromFile("demo-config.conf")
@@ -92,7 +95,12 @@ object Demo {
       enrichData <- IO.pure {
         BroadCastStatic(spark.sparkContext.broadcast(Map("US" -> "USD")))
       }
-      result <- materializedProgram.run((data, enrichData))
+      result <- {
+        import FlatMapF._
+        implicit val session: SparkSession = spark
+        //implicit val datasetIsFlatMap = new DatasetFlatMap // tagless final
+        materializedProgram.run((data, enrichData))
+      }
     } yield result.outputToConsole
 
     process.unsafeRunSync()
